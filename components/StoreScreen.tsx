@@ -1,57 +1,90 @@
-import axios from "axios";
 import React, { useState } from "react";
-import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, View, Alert } from "react-native";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Card from "../components/ui/Card";
+import axios from "axios";
 
 export default function StoreScreen() {
-  const [title, setTitle] = useState("");
-  const [data, setData] = useState("");
+  const [title, setTitle] = useState<string>("");
+  const [data, setData] = useState<string>("");
+  const [encryptionKey, setEncryptionKey] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
   async function saveData() {
-    await axios.post("http://192.168.240.217:5000/save", { title, data });
-    setTitle("");
-    setData("");
+    if (!title || !data || !encryptionKey) {
+      Alert.alert(
+        "❌ Missing Fields",
+        "Please enter title, data, and encryption key.",
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post("http://192.168.240.217:5000/save", {
+        title,
+        data,
+        encryptionKey,
+      });
+
+      setTitle("");
+      setData("");
+      setEncryptionKey("");
+
+      Alert.alert("✅ Success", "Your data has been securely stored.");
+    } catch (error) {
+      Alert.alert("❌ Error", "Failed to save data. Try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <ScrollView
-      className="bg-gray-900"
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#1e1e1e",
+        padding: 20,
+      }}
     >
-      <View className="p-6">
+      <Card>
         <Text className="text-2xl font-bold text-center text-white mb-6">
           🔒 Secure Password Manager
         </Text>
 
-        <TextInput
-          className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
+        {/* Title Input */}
+        <Input
           placeholder="Enter Title"
-          placeholderTextColor="#bbb"
           value={title}
           onChangeText={setTitle}
         />
 
-        <TextInput
-          className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
-          placeholder="Enter Data"
-          placeholderTextColor="#bbb"
-          value={data}
-          onChangeText={setData}
+        {/* Encryption Key Input */}
+        <Input
+          placeholder="Enter Encryption Key"
+          value={encryptionKey}
+          onChangeText={setEncryptionKey}
+          secureTextEntry={true}
         />
 
-        <TouchableOpacity
-          className="bg-blue-600 p-3 rounded-lg"
+        {/* Resizable Data Input */}
+        <Input
+          placeholder="Enter Data"
+          value={data}
+          onChangeText={setData}
+          multiline={true}
+        />
+
+        {/* Save Button with Loading */}
+        <Button
+          title={loading ? "Saving..." : "💾 Save Data"}
           onPress={saveData}
-        >
-          <Text className="text-white text-center font-semibold">
-            💾 Save Data
-          </Text>
-        </TouchableOpacity>
-      </View>
+          loading={loading}
+        />
+      </Card>
     </ScrollView>
   );
 }
