@@ -99,12 +99,32 @@ export default function StoreScreen() {
           placeholder="Enter Title"
           value={title}
           onChangeText={setTitle}
+          style={{
+            backgroundColor: isDarkMode ? "#1E1E1E" : "#FFFFFF",
+            color: isDarkMode ? "#EDEDED" : "#000",
+            borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "#CCC",
+            borderWidth: 1,
+            padding: 12,
+            borderRadius: 8,
+            width: "100%",
+            marginBottom: 10,
+          }}
         />
         <Input
           placeholder="Enter Encryption Key"
           value={encryptionKey}
           onChangeText={setEncryptionKey}
           secureTextEntry={true}
+          style={{
+            backgroundColor: isDarkMode ? "#1E1E1E" : "#FFFFFF",
+            color: isDarkMode ? "#EDEDED" : "#000",
+            borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "#CCC",
+            borderWidth: 1,
+            padding: 12,
+            borderRadius: 8,
+            width: "100%",
+            marginBottom: 10,
+          }}
         />
 
         {/* Encryption Key Warning */}
@@ -137,6 +157,16 @@ export default function StoreScreen() {
           value={data}
           onChangeText={setData}
           multiline={true}
+          style={{
+            backgroundColor: isDarkMode ? "#1E1E1E" : "#FFFFFF",
+            color: isDarkMode ? "#EDEDED" : "#000",
+            borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "#CCC",
+            borderWidth: 1,
+            padding: 12,
+            borderRadius: 8,
+            width: "100%",
+            marginBottom: 10,
+          }}
         />
 
         {/* Save Entry Button */}
@@ -173,7 +203,7 @@ export default function StoreScreen() {
         <View
           className={`p-4 rounded-lg mt-6 ${
             isDarkMode
-              ? "bg-[#252525] border-[#444]"
+              ? "bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)]"
               : "bg-gray-100 border-gray-300"
           }`}
         >
