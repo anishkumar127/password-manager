@@ -1,21 +1,21 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import CryptoJS from "crypto-js";
+import * as Clipboard from "expo-clipboard";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  Modal,
   Platform,
+  RefreshControl,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  RefreshControl,
-  Modal,
   useColorScheme,
 } from "react-native";
-import axios from "axios";
-import * as Clipboard from "expo-clipboard";
-import CryptoJS from "crypto-js";
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/Feather";
 
 const ListScreen = () => {
@@ -29,19 +29,18 @@ const ListScreen = () => {
   const [showKey, setShowKey] = useState(false);
   const [showKeyModel, setShowKeyModel] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [copying, setCopying] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredData, setFilteredData] = useState(dataList);
 
   // 🔓 Per-item decryption modal
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
-    id: string;
+    _id: string;
     title: string;
     encryptedData: string;
   } | null>(null);
   const [customKey, setCustomKey] = useState("");
-  const [decryptedItemText, setDecryptedItemText] = useState("");
+  const [decryptedItemText, setDecryptedItemText] = useState<string>("");
 
   useEffect(() => {
     fetchData();
@@ -98,7 +97,7 @@ const ListScreen = () => {
   }
 
   function openDecryptionModal(item: {
-    id: string;
+    _id: string;
     title: string;
     encryptedData: string;
   }) {
@@ -110,9 +109,11 @@ const ListScreen = () => {
 
   function decryptData(encryptedData: string, key: string) {
     try {
+      if (!key) return Alert.alert("Error", "🔒 Encrypted (No Key)");
       const decrypted = CryptoJS.AES.decrypt(encryptedData, key).toString(
         CryptoJS.enc.Utf8,
       );
+
       return decrypted || "🔒 Encrypted";
     } catch (error) {
       return "🔒 Encrypted";
@@ -165,7 +166,7 @@ const ListScreen = () => {
 
       {/* Global Decryption Key Input */}
       <View
-        className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg mt-4`}
+        className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg my-2`}
       >
         <TextInput
           className={`flex-1 ${isDarkMode ? "text-white" : "text-black"}`}
@@ -223,12 +224,12 @@ const ListScreen = () => {
                 className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mt-2 overflow-hidden`}
                 numberOfLines={3}
               >
-                {decryptedText}
+                {decryptedText ?? ""}
               </Text>
 
               <TouchableOpacity
                 className="bg-green-500 p-3 rounded-lg mt-3 flex-row items-center justify-center w-full"
-                onPress={() => copyToClipboard(decryptedText)}
+                onPress={() => copyToClipboard(decryptedText ?? "")}
               >
                 <Icon name="copy" size={20} color="white" />
               </TouchableOpacity>
@@ -254,7 +255,6 @@ const ListScreen = () => {
             >
               Decrypt "{selectedItem?.title}"
             </Text>
-
             <View
               className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg mb-4`}
             >
@@ -273,13 +273,33 @@ const ListScreen = () => {
                 />
               </TouchableOpacity>
             </View>
+            {/* Decrypted Output */}
+            {decryptedItemText ? (
+              <View className="my-2 p-2 rounded-lg">
+                <Text className="text-center text-green-500">
+                  {decryptedItemText}
+                </Text>
+              </View>
+            ) : null}
+            {decryptedItemText && decryptedItemText !== "🔒 Encrypted" ? (
+              <TouchableOpacity
+                className="bg-green-500 p-3 rounded-lg mb-2 flex-row items-center justify-center w-full"
+                onPress={() => copyToClipboard(decryptedItemText ?? "")}
+              >
+                <Icon name="copy" size={20} color="white" />
+              </TouchableOpacity>
+            ) : (
+              ""
+            )}
             <TouchableOpacity
               className="bg-blue-600 p-3 rounded-lg"
-              onPress={() =>
-                setDecryptedItemText(
-                  decryptData(selectedItem?.encryptedData || "", customKey),
-                )
-              }
+              onPress={() => {
+                const decryptedText = decryptData(
+                  selectedItem?.encryptedData || "",
+                  customKey,
+                );
+                setDecryptedItemText(decryptedText ?? "");
+              }}
             >
               <Text className="text-white text-center font-semibold">
                 Decrypt
