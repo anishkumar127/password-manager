@@ -180,25 +180,26 @@ export default function StoreScreen() {
         </TouchableOpacity>
 
         {/* Bulk Upload Button */}
+
         <TouchableOpacity
-          className={`p-3 rounded-lg flex-row justify-center items-center mt-4 ${
+          className={`p-3 w-full rounded-lg flex-row justify-center items-center mt-4 ${
             isDarkMode ? "bg-[#333333]" : "bg-gray-200"
           }`}
         >
-          <Icon
-            name="upload"
-            size={18}
-            color={isDarkMode ? "#E0E0E0" : "black"}
-          />
           <Text
-            className={`ml-2 font-semibold ${
+            className={`font-semibold text-center w-full ${
               isDarkMode ? "text-[#E0E0E0]" : "text-black"
             }`}
           >
+            <Icon
+              name="upload"
+              size={18}
+              color={isDarkMode ? "#E0E0E0" : "black"}
+            />
+            {"   "}
             Bulk Upload via Excel
           </Text>
         </TouchableOpacity>
-
         {/* How It Works Section */}
         <View
           className={`p-4 rounded-lg mt-6 ${
