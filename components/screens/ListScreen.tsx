@@ -27,7 +27,8 @@ const ListScreen = () => {
   const [decryptionKey, setDecryptionKey] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [copying, setCopying] = useState<string | null>(null);
-
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredData, setFilteredData] = useState(dataList);
   // 🔓 Per-item decryption modal
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
@@ -110,7 +111,18 @@ const ListScreen = () => {
       return "🔒 Encrypted";
     }
   }
-
+  useEffect(() => {
+    // 🔍 Filter Data based on Search Query
+    if (searchQuery.trim() === "") {
+      setFilteredData(dataList);
+    } else {
+      setFilteredData(
+        dataList.filter((item) =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        ),
+      );
+    }
+  }, [searchQuery, dataList]);
   return (
     <View
       className={`flex-1 ${colorScheme === "dark" ? "bg-gray-900" : "bg-gray-100"} p-4`}
@@ -120,10 +132,26 @@ const ListScreen = () => {
       >
         🔐 Secure Vault
       </Text>
-
+      {/* Search Input */}
+      <View
+        className={`flex-row items-center border ${colorScheme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-white"} p-3 rounded-lg mt-4`}
+      >
+        <TextInput
+          className="flex-1 text-white"
+          placeholder="Search..."
+          placeholderTextColor="#bbb"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")}>
+            <Icon name="x-circle" size={20} color="#bbb" />
+          </TouchableOpacity>
+        )}
+      </View>
       {/* Decryption Key Input */}
       <View
-        className={`flex-row items-center border ${colorScheme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-white"} p-3 rounded-lg mt-6`}
+        className={`flex-row items-center  mb-4 border ${colorScheme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-white"} p-3 rounded-lg mt-2`}
       >
         <TextInput
           className={`flex-1 ${colorScheme === "dark" ? "text-white" : "text-black"}`}
@@ -137,7 +165,7 @@ const ListScreen = () => {
 
       {/* Data List */}
       <FlatList
-        data={dataList}
+        data={filteredData}
         keyExtractor={(item) => item._id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
@@ -222,6 +250,25 @@ const ListScreen = () => {
               placeholder="Enter Key"
               secureTextEntry={true}
             />
+            <TouchableOpacity
+              className="bg-blue-600 p-3 rounded-lg"
+              onPress={() => {
+                let decrypted = decryptData(
+                  dataList.find((item) => item._id === selectedItem?.id)
+                    ?.encryptedData || "",
+                  customKey,
+                );
+                Alert.alert(
+                  "Decrypted Data",
+                  decrypted || "🔒 Unable to decrypt",
+                );
+                setModalVisible(false);
+              }}
+            >
+              <Text className="text-white text-center font-semibold">
+                Decrypt
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
