@@ -4,8 +4,6 @@ import {
   Text,
   View,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
   useColorScheme,
   RefreshControl,
@@ -13,322 +11,123 @@ import {
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Card from "../ui/Card";
-import axios from "axios";
-import * as DocumentPicker from "expo-document-picker";
-import * as XLSX from "xlsx";
 import Icon from "react-native-vector-icons/Feather";
 
 export default function StoreScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === "dark";
 
-  const [title, setTitle] = useState<string>("");
-  const [data, setData] = useState<string>("");
-  const [encryptionKey, setEncryptionKey] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [title, setTitle] = useState("");
+  const [data, setData] = useState("");
+  const [encryptionKey, setEncryptionKey] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [bulkLoading, setBulkLoading] = useState<boolean>(false);
-  const [bulkData, setBulkData] = useState<any[]>([]);
-  const [errors, setErrors] = useState<string[]>([]); // Track errors
-
-  const [isBulkUpload, setIsBulkUpload] = useState<boolean>(false);
-
-  const [refreshing, setRefreshing] = useState<boolean>(false); // ⬅️ Swipe to Refresh State
-
-  const REQUIRED_COLUMNS = ["Title", "Data", "EncryptionKey"];
-
-  async function saveData() {
-    if (!title || !data || !encryptionKey) {
-      Alert.alert(
-        "❌ Missing Fields",
-        "Please enter title, data, and encryption key.",
-      );
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await axios.post("http://192.168.240.217:5000/save", {
-        title,
-        data,
-        encryptionKey,
-      });
-
-      setTitle("");
-      setData("");
-      setEncryptionKey("");
-
-      Alert.alert("✅ Success", "Your data has been securely stored.");
-    } catch (error) {
-      Alert.alert("❌ Error", "Failed to save data. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function pickExcelFile() {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: [
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "application/vnd.ms-excel",
-        ],
-      });
-
-      if (result.canceled || !result.assets) {
-        return;
-      }
-
-      const fileUri = result.assets[0].uri;
-      const response = await fetch(fileUri);
-      const blob = await response.blob();
-
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
-
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-
-        const parsedData = XLSX.utils.sheet_to_json(sheet);
-        const validationErrors: string[] = [];
-
-        if (parsedData.length === 0) {
-          Alert.alert(
-            "❌ Error",
-            "The file is empty or incorrectly formatted.",
-          );
-          return;
-        }
-
-        // Validate Columns
-        // @ts-ignore
-        const fileColumns = Object.keys(parsedData[0]);
-        const missingColumns = REQUIRED_COLUMNS.filter(
-          (col) => !fileColumns.includes(col),
-        );
-
-        if (missingColumns.length > 0) {
-          Alert.alert(
-            "❌ Column Mismatch",
-            `Missing required columns: ${missingColumns.join(", ")}`,
-          );
-          return;
-        }
-
-        // Validate Each Row
-        const validData = parsedData
-          .map((row: any, index: number) => {
-            const title = row.Title ? String(row.Title).trim() : "";
-            const data = row.Data ? String(row.Data).trim() : "";
-            const encryptionKey = row.EncryptionKey
-              ? String(row.EncryptionKey).trim()
-              : "";
-
-            if (!title || !data || !encryptionKey) {
-              validationErrors.push(
-                `❌ Row ${index + 1}: Missing required fields`,
-              );
-              return null;
-            }
-
-            return { title, data, encryptionKey };
-          })
-          .filter(Boolean); // Remove invalid rows
-
-        setErrors(validationErrors);
-
-        if (validationErrors.length > 0) {
-          Alert.alert(
-            "⚠️ Warning",
-            `Some rows have errors. Check the list below.`,
-          );
-        } else {
-          Alert.alert(
-            "✅ Success",
-            `Loaded ${validData.length} valid entries.`,
-          );
-        }
-
-        setBulkData(validData);
-        setIsBulkUpload(true);
-      };
-
-      reader.readAsArrayBuffer(blob);
-    } catch (error) {
-      console.error("Error reading file:", error);
-      Alert.alert("❌ Error", "Failed to process the file.");
-    }
-  }
-
-  async function bulkUpload() {
-    if (bulkData.length === 0) {
-      Alert.alert("❌ No Data", "Please upload a valid Excel file first.");
-      return;
-    }
-
-    setBulkLoading(true);
-    try {
-      await axios.post("http://192.168.240.217:5000/bulk-save", {
-        records: bulkData,
-      });
-
-      setBulkData([]);
-      setIsBulkUpload(false);
-      Alert.alert("✅ Success", "Bulk data uploaded successfully!");
-    } catch (error) {
-      Alert.alert("❌ Error", "Failed to upload bulk data.");
-    } finally {
-      setBulkLoading(false);
-    }
-  }
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTitle("");
     setData("");
     setEncryptionKey("");
-    setBulkData([]);
-    setErrors([]);
-    setIsBulkUpload(false);
     setRefreshing(false);
   }, []);
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <ScrollView
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+      contentContainerStyle={{
+        flexGrow: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 10,
+        backgroundColor: isDarkMode ? "#121212" : "#F5F5F5",
+      }}
     >
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 10,
-          minHeight: "100%",
-          backgroundColor: isDarkMode ? "#1E1E1E" : "#F5F5F5",
-        }}
-        keyboardShouldPersistTaps="handled"
+      {/* Secure Password Manager Card */}
+      <Card
+        className={`w-full max-w-md p-4 rounded-lg shadow-lg border ${isDarkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-300"}`}
       >
-        <Card
-          className={`w-full max-w-md p-4 rounded-lg shadow-lg border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"}`}
+        {/* Header */}
+        <Text
+          className={`text-2xl font-bold text-center ${isDarkMode ? "text-white" : "text-black"} mb-2`}
         >
-          {/* App Introduction */}
-          <Text
-            className={`text-2xl font-bold text-center ${isDarkMode ? "text-white" : "text-black"} mb-2`}
-          >
-            🔒 Secure Password Manager
+          🔒 Secure Password Manager
+        </Text>
+        <Text className="text-center text-gray-600 mb-4 px-2">
+          A zero-knowledge password manager that encrypts your data locally.
+          Your encryption key never leaves your device, ensuring only you can
+          access your data.
+        </Text>
+
+        {/* Encryption Security Notice */}
+        <View className="bg-gray-100 border border-gray-300 p-3 rounded-lg mb-4">
+          <Text className="text-gray-700 text-sm">
+            🔹 Your data is encrypted locally before being stored. We cannot
+            access or recover your data without your encryption key.
           </Text>
-          <Text className="text-center text-gray-600 mb-4 px-2">
-            Welcome to Secure Password Manager! This tool allows users to
-            **store passwords securely** with **end-to-end encryption**. The
-            encryption key is **never stored** in our database, ensuring **only
-            you** can access your data.
+        </View>
+
+        {/* Input Fields */}
+        <Input
+          placeholder="Enter Title"
+          value={title}
+          onChangeText={setTitle}
+        />
+        <Input
+          placeholder="Enter Encryption Key"
+          value={encryptionKey}
+          onChangeText={setEncryptionKey}
+          secureTextEntry={true}
+        />
+
+        {/* Encryption Key Warning */}
+        <View className="bg-red-100 border border-red-400 p-3 rounded-lg mt-2 mb-2">
+          <Text className="text-red-600 text-sm">
+            ⚠️ Remember your encryption key! Without it, your data cannot be
+            decrypted.
           </Text>
-          <Text className="text-center text-gray-500 mb-4">
-            You can **add individual entries** or **upload multiple passwords
-            via an Excel file**.
+        </View>
+
+        <Input
+          placeholder="Enter Data"
+          value={data}
+          onChangeText={setData}
+          multiline={true}
+        />
+
+        {/* Save Entry Button */}
+        <TouchableOpacity className="bg-black p-3 rounded-lg flex-row justify-center items-center mt-4">
+          <Icon name="save" size={20} color="white" />
+          <Text className="text-white ml-2 font-semibold"> Save Entry </Text>
+        </TouchableOpacity>
+
+        {/* Bulk Upload Button */}
+        <TouchableOpacity className="bg-gray-200 p-3 rounded-lg flex-row justify-center items-center mt-4">
+          <Icon name="upload" size={18} color="black" />
+          <Text className="text-black ml-2 font-semibold">
+            Bulk Upload via Excel
           </Text>
+        </TouchableOpacity>
 
-          {/* Title Field */}
-          <Text className="text-gray-600 mb-1">Title</Text>
-          <Text className="text-gray-600 text-sm mb-2">
-            📌 The title helps you recognize stored data easily.
+        {/* How It Works Section */}
+        <View className="bg-gray-100 border border-gray-300 p-4 rounded-lg mt-6">
+          <Text className="text-gray-500 font-semibold mb-2">
+            How it works:
           </Text>
-          <Input
-            placeholder="Enter a unique title"
-            value={title}
-            onChangeText={setTitle}
-          />
-
-          {/* Encryption Key Field */}
-          <View className="flex-row items-center gap-1">
-            <Text className="text-gray-600 mb-1 mt-3">Encryption Key</Text>
-            <Icon name="lock" size={10} color="gray" />
-          </View>
-          <Input
-            placeholder="Enter Encryption Key"
-            value={encryptionKey}
-            onChangeText={setEncryptionKey}
-            secureTextEntry={true}
-          />
-
-          {/* Encryption Key Warning */}
-          <Text className="text-center text-red-500 font-semibold mt-2">
-            ⚠️ Important: Keep your encryption key safe! Without it, your data
-            cannot be decrypted.
+          <Text className="text-gray-600 text-sm">
+            ✔️ Your data is encrypted locally using your encryption key.
           </Text>
-
-          {/* Data Input Field */}
-          <Text className="text-gray-600 mb-1 mt-3">Data</Text>
-          <Input
-            placeholder="Enter data"
-            value={data}
-            onChangeText={setData}
-            multiline={true}
-          />
-
-          {/* Save Button */}
-          <Button
-            title={loading ? "Saving..." : "Save Data"}
-            onPress={saveData}
-            loading={loading}
-            disable={isBulkUpload}
-            icon="save-outline"
-          />
-
-          {/* Upload Excel Button */}
-          <TouchableOpacity
-            onPress={pickExcelFile}
-            className="border border-blue-600 p-2 rounded-lg flex-row justify-center items-center mt-4"
-          >
-            <Icon name="upload" size={18} color="blue" />
-            <Text className="text-blue-600 ml-2 font-semibold">
-              Upload Excel
-            </Text>
-          </TouchableOpacity>
-
-          {/* Bulk Upload Guideline */}
-          <Text className="text-gray-500 text-center mt-2">
-            🔄 Bulk upload allows you to store multiple entries at once using an
-            Excel file.
+          <Text className="text-gray-600 text-sm">
+            ✔️ The encryption key never leaves your device.
           </Text>
-
-          {/* Display Errors (if any) */}
-          {errors.length > 0 && (
-            <View className="mt-4">
-              <Text
-                className={`${isDarkMode ? "text-red-400" : "text-red-600"} text-center`}
-              >
-                ⚠️ Errors Found:
-              </Text>
-              {errors.slice(0, 5).map((error, index) => (
-                <Text key={index} className="text-red-400 text-sm text-center">
-                  {error}
-                </Text>
-              ))}
-            </View>
-          )}
-
-          {/* Bulk Upload Info */}
-          {bulkData.length > 0 && (
-            <View className="mt-4">
-              <Text
-                className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} text-center mb-2`}
-              >
-                Loaded {bulkData.length} valid entries
-              </Text>
-              <Button
-                title="Bulk Upload"
-                onPress={bulkUpload}
-                loading={bulkLoading}
-                icon="save-outline"
-              />
-            </View>
-          )}
-        </Card>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Text className="text-gray-600 text-sm">
+            ✔️ Store individual entries or bulk upload via Excel.
+          </Text>
+          <Text className="text-gray-600 text-sm">
+            ✔️ We cannot read your encrypted data.
+          </Text>
+        </View>
+      </Card>
+    </ScrollView>
   );
 }
