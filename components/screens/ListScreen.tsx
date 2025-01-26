@@ -27,6 +27,7 @@ const ListScreen = () => {
   >([]);
   const [decryptionKey, setDecryptionKey] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const [showKeyModel, setShowKeyModel] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [copying, setCopying] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -253,13 +254,25 @@ const ListScreen = () => {
             >
               Decrypt "{selectedItem?.title}"
             </Text>
-            <TextInput
-              className={`border p-3 rounded-lg w-full mb-4 ${isDarkMode ? "text-white border-gray-700 bg-gray-800" : "text-black border-gray-300 bg-white"}`}
-              placeholder="Enter Key"
-              placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
-              secureTextEntry={true}
-              onChangeText={setCustomKey}
-            />
+
+            <View
+              className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg mb-4`}
+            >
+              <TextInput
+                className={`flex-1 ${isDarkMode ? "text-white" : "text-black"}`}
+                placeholder="Enter Key"
+                placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
+                onChangeText={setCustomKey}
+                secureTextEntry={!showKeyModel}
+              />
+              <TouchableOpacity onPress={() => setShowKeyModel(!showKeyModel)}>
+                <Icon
+                  name={showKeyModel ? "eye" : "eye-off"}
+                  size={20}
+                  color={isDarkMode ? "#bbb" : "#777"}
+                />
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
               className="bg-blue-600 p-3 rounded-lg"
               onPress={() =>
