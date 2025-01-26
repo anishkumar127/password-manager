@@ -25,10 +25,12 @@ const ListScreen = () => {
     { _id: string; title: string; encryptedData: string }[]
   >([]);
   const [decryptionKey, setDecryptionKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [copying, setCopying] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredData, setFilteredData] = useState(dataList);
+
   // 🔓 Per-item decryption modal
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
@@ -36,10 +38,6 @@ const ListScreen = () => {
     title: string;
   } | null>(null);
   const [customKey, setCustomKey] = useState("");
-
-  // 📜 Expand Full Text Modal
-  const [expandModalVisible, setExpandModalVisible] = useState(false);
-  const [expandedText, setExpandedText] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -52,6 +50,7 @@ const ListScreen = () => {
       const response = await axios.get("http://192.168.240.217:5000/data");
       if (response?.data) {
         setDataList(response.data);
+        setFilteredData(response.data);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to fetch data.");
@@ -60,11 +59,9 @@ const ListScreen = () => {
     }
   }
 
-  async function copyToClipboard(text: string, id: string) {
-    setCopying(id);
+  async function copyToClipboard(text: string) {
     await Clipboard.setStringAsync(text);
     Alert.alert("✅ Copied", "Text copied to clipboard!");
-    setCopying(null);
   }
 
   async function saveKeyToLocalStorage(key: string) {
@@ -76,7 +73,7 @@ const ListScreen = () => {
       }
       setDecryptionKey(key);
     } catch (error) {
-      console.error("Error saving data:", error);
+      console.error("Error saving key:", error);
     }
   }
 
@@ -92,7 +89,7 @@ const ListScreen = () => {
         setDecryptionKey(result);
       }
     } catch (error) {
-      console.error("Error retrieving data:", error);
+      console.error("Error retrieving key:", error);
     }
   }
 
@@ -111,8 +108,8 @@ const ListScreen = () => {
       return "🔒 Encrypted";
     }
   }
+
   useEffect(() => {
-    // 🔍 Filter Data based on Search Query
     if (searchQuery.trim() === "") {
       setFilteredData(dataList);
     } else {
@@ -123,6 +120,7 @@ const ListScreen = () => {
       );
     }
   }, [searchQuery, dataList]);
+
   return (
     <View
       className={`flex-1 ${colorScheme === "dark" ? "bg-gray-900" : "bg-gray-100"} p-4`}
@@ -132,10 +130,9 @@ const ListScreen = () => {
       >
         🔐 Secure Vault
       </Text>
+
       {/* Search Input */}
-      <View
-        className={`flex-row items-center border ${colorScheme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-white"} p-3 rounded-lg mt-4`}
-      >
+      <View className="flex-row items-center border border-gray-700 bg-gray-800 p-3 rounded-lg mt-4">
         <TextInput
           className="flex-1 text-white"
           placeholder="Search..."
@@ -149,18 +146,20 @@ const ListScreen = () => {
           </TouchableOpacity>
         )}
       </View>
-      {/* Decryption Key Input */}
-      <View
-        className={`flex-row items-center  mb-4 border ${colorScheme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-white"} p-3 rounded-lg mt-2`}
-      >
+
+      {/* Global Decryption Key Input */}
+      <View className="flex-row items-center border border-gray-700 bg-gray-800 p-3 rounded-lg mt-4">
         <TextInput
-          className={`flex-1 ${colorScheme === "dark" ? "text-white" : "text-black"}`}
+          className="flex-1 text-white"
           placeholder="Enter Global Decryption Key"
-          placeholderTextColor={colorScheme === "dark" ? "#bbb" : "#555"}
+          placeholderTextColor="#bbb"
           value={decryptionKey}
           onChangeText={saveKeyToLocalStorage}
-          secureTextEntry={true}
+          secureTextEntry={!showKey}
         />
+        <TouchableOpacity onPress={() => setShowKey(!showKey)}>
+          <Icon name={showKey ? "eye" : "eye-off"} size={20} color="#bbb" />
+        </TouchableOpacity>
       </View>
 
       {/* Data List */}
@@ -176,14 +175,9 @@ const ListScreen = () => {
           const isDecrypted = decryptedText !== "🔒 Encrypted";
 
           return (
-            <View
-              className={`p-4 rounded-lg mb-4 shadow-lg border ${colorScheme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"}`}
-            >
-              {/* Title with Unlock Icon */}
+            <View className="p-4 rounded-lg mb-4 shadow-lg border border-gray-700 bg-gray-800">
               <View className="flex-row justify-between items-center">
-                <Text
-                  className={`${colorScheme === "dark" ? "text-white" : "text-black"} font-bold text-lg`}
-                >
+                <Text className="text-white font-bold text-lg">
                   {item.title}
                 </Text>
                 <TouchableOpacity
@@ -194,36 +188,21 @@ const ListScreen = () => {
                   <Icon
                     name={isDecrypted ? "unlock" : "lock"}
                     size={22}
-                    color={colorScheme === "dark" ? "white" : "black"}
+                    color="white"
                   />
                 </TouchableOpacity>
               </View>
 
-              {/* Truncated Data */}
               <Text
-                className={`${colorScheme === "dark" ? "text-gray-300" : "text-gray-700"} mt-2 overflow-hidden`}
+                className="text-gray-300 mt-2 overflow-hidden"
                 numberOfLines={3}
               >
                 {decryptedText}
               </Text>
 
-              {/* Expand Button */}
-              {decryptedText.length > 100 && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setExpandedText(decryptedText);
-                    setExpandModalVisible(true);
-                  }}
-                >
-                  <Text className="text-blue-500 mt-2 text-sm">Expand 🔽</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Copy Button */}
               <TouchableOpacity
                 className="bg-green-500 p-3 rounded-lg mt-3 flex-row items-center justify-center w-full"
-                onPress={() => copyToClipboard(decryptedText, item._id)}
-                disabled={copying === item._id}
+                onPress={() => copyToClipboard(decryptedText)}
               >
                 <Icon name="copy" size={20} color="white" />
               </TouchableOpacity>
@@ -232,7 +211,7 @@ const ListScreen = () => {
         }}
       />
 
-      {/* Close Button for Modal */}
+      {/* Decryption Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View className="flex-1 justify-center items-center bg-black/50">
           <View className="bg-white p-6 rounded-lg w-80 shadow-lg">
@@ -250,21 +229,7 @@ const ListScreen = () => {
               placeholder="Enter Key"
               secureTextEntry={true}
             />
-            <TouchableOpacity
-              className="bg-blue-600 p-3 rounded-lg"
-              onPress={() => {
-                let decrypted = decryptData(
-                  dataList.find((item) => item._id === selectedItem?.id)
-                    ?.encryptedData || "",
-                  customKey,
-                );
-                Alert.alert(
-                  "Decrypted Data",
-                  decrypted || "🔒 Unable to decrypt",
-                );
-                setModalVisible(false);
-              }}
-            >
+            <TouchableOpacity className="bg-blue-600 p-3 rounded-lg">
               <Text className="text-white text-center font-semibold">
                 Decrypt
               </Text>
