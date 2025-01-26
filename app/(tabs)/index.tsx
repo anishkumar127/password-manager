@@ -7,9 +7,9 @@ import Anish from "@/components/screens/Anish";
 const app = () => {
   return (
     <View>
-      {/* <PasswordManager /> */}
+      <PasswordManager />
       {/* <MainScreen /> */}
-      <Anish />
+      {/* <Anish /> */}
     </View>
   );
 };

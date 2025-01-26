@@ -17,7 +17,9 @@ import * as Clipboard from "expo-clipboard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PasswordManager() {
-  const [dataList, setDataList] = useState([]);
+  const [dataList, setDataList] = useState<
+    { _id: string; title: string; encryptedData: string }[]
+  >([]);
   const [title, setTitle] = useState("");
   const [data, setData] = useState("");
   const [decryptionKey, setDecryptionKey] = useState("");
@@ -58,12 +60,14 @@ export default function PasswordManager() {
   }
 
   async function fetchData() {
-    const response = await axios.get("http://localhost:5000/data");
-    setDataList(response.data);
+    const response = await axios.get("http://192.168.240.217:5000/data");
+    if (response && response?.data) {
+      setDataList(response.data);
+    }
   }
 
   async function saveData() {
-    await axios.post("http://localhost:5000/save", { title, data });
+    await axios.post("http://192.168.240.217:5000/save", { title, data });
     setTitle("");
     setData("");
     fetchData();
@@ -76,8 +80,8 @@ export default function PasswordManager() {
 
   return (
     <ScrollView
-      className="flex-1 bg-gray-900"
-      contentContainerStyle={{ paddingBottom: 30 }}
+    // className="flex-1 bg-gray-900"
+    // contentContainerStyle={{ paddingBottom: 30 }}
     >
       <View className="p-6">
         <Text className="text-2xl font-bold text-center text-white mb-6">
@@ -115,14 +119,14 @@ export default function PasswordManager() {
 
         <FlatList
           data={dataList}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item) => item?._id}
           scrollEnabled={false} // Prevents nested scrolling issues
           renderItem={({ item }) => {
-            let displayText = item.encryptedData;
+            let displayText = item?.encryptedData;
             if (decryptionKey) {
               try {
                 displayText = CryptoJS.AES.decrypt(
-                  item.encryptedData,
+                  item?.encryptedData,
                   decryptionKey,
                 ).toString(CryptoJS.enc.Utf8);
               } catch (error) {}
@@ -130,7 +134,7 @@ export default function PasswordManager() {
 
             return (
               <View className="p-4 bg-gray-800 rounded-lg mb-4">
-                <Text className="text-white font-bold">{item.title}</Text>
+                <Text className="text-white font-bold">{item?.title}</Text>
                 <Text className="text-gray-300">
                   {displayText ? displayText : "🔒 Encrypted"}
                 </Text>
