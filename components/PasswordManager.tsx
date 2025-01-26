@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  ScrollView,
   Platform,
 } from "react-native";
 import axios from "axios";
@@ -74,81 +75,87 @@ export default function PasswordManager() {
   }
 
   return (
-    <View className="flex-1 p-6 bg-gray-900">
-      <Text className="text-2xl font-bold text-center text-white mb-6">
-        🔒 Secure Password Manager
-      </Text>
-
-      <TextInput
-        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
-        placeholder="Enter Title"
-        placeholderTextColor="#bbb"
-        value={title}
-        onChangeText={setTitle}
-      />
-
-      <TextInput
-        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
-        placeholder="Enter Data"
-        placeholderTextColor="#bbb"
-        value={data}
-        onChangeText={setData}
-      />
-
-      <TouchableOpacity
-        className="bg-blue-600 p-3 rounded-lg"
-        onPress={saveData}
-      >
-        <Text className="text-white text-center font-semibold">
-          💾 Save Data
+    <ScrollView
+      className="flex-1 bg-gray-900"
+      contentContainerStyle={{ paddingBottom: 30 }}
+    >
+      <View className="p-6">
+        <Text className="text-2xl font-bold text-center text-white mb-6">
+          🔒 Secure Password Manager
         </Text>
-      </TouchableOpacity>
 
-      <Text className="text-xl font-bold text-center text-white mt-6">
-        📜 Stored Data
-      </Text>
+        <TextInput
+          className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
+          placeholder="Enter Title"
+          placeholderTextColor="#bbb"
+          value={title}
+          onChangeText={setTitle}
+        />
 
-      <FlatList
-        data={dataList}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          let displayText = item.encryptedData;
-          if (decryptionKey) {
-            try {
-              displayText = CryptoJS.AES.decrypt(
-                item.encryptedData,
-                decryptionKey,
-              ).toString(CryptoJS.enc.Utf8);
-            } catch (error) {}
-          }
+        <TextInput
+          className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
+          placeholder="Enter Data"
+          placeholderTextColor="#bbb"
+          value={data}
+          onChangeText={setData}
+        />
 
-          return (
-            <View className="p-4 bg-gray-800 rounded-lg mb-4">
-              <Text className="text-white font-bold">{item.title}</Text>
-              <Text className="text-gray-300">
-                {displayText ? displayText : "🔒 Encrypted"}
-              </Text>
+        <TouchableOpacity
+          className="bg-blue-600 p-3 rounded-lg"
+          onPress={saveData}
+        >
+          <Text className="text-white text-center font-semibold">
+            💾 Save Data
+          </Text>
+        </TouchableOpacity>
 
-              <TouchableOpacity
-                className="bg-green-500 p-2 rounded-lg mt-3"
-                onPress={() => copyToClipboard(displayText)}
-              >
-                <Text className="text-white text-center font-semibold">
-                  📋 Copy
+        <Text className="text-xl font-bold text-center text-white mt-6">
+          📜 Stored Data
+        </Text>
+
+        <FlatList
+          data={dataList}
+          keyExtractor={(item) => item._id}
+          scrollEnabled={false} // Prevents nested scrolling issues
+          renderItem={({ item }) => {
+            let displayText = item.encryptedData;
+            if (decryptionKey) {
+              try {
+                displayText = CryptoJS.AES.decrypt(
+                  item.encryptedData,
+                  decryptionKey,
+                ).toString(CryptoJS.enc.Utf8);
+              } catch (error) {}
+            }
+
+            return (
+              <View className="p-4 bg-gray-800 rounded-lg mb-4">
+                <Text className="text-white font-bold">{item.title}</Text>
+                <Text className="text-gray-300">
+                  {displayText ? displayText : "🔒 Encrypted"}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        }}
-      />
 
-      <TextInput
-        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mt-6"
-        placeholder="Enter Decryption Key"
-        placeholderTextColor="#bbb"
-        onChangeText={saveKeyToLocalStorage}
-      />
-    </View>
+                <TouchableOpacity
+                  className="bg-green-500 p-2 rounded-lg mt-3"
+                  onPress={() => copyToClipboard(displayText)}
+                >
+                  <Text className="text-white text-center font-semibold">
+                    📋 Copy
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          }}
+        />
+
+        <TextInput
+          className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mt-6"
+          placeholder="Enter Decryption Key"
+          placeholderTextColor="#bbb"
+          onChangeText={saveKeyToLocalStorage}
+        />
+      </View>
+    </ScrollView>
   );
 }
 
