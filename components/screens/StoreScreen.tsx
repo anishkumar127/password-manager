@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ScrollView,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
   TouchableOpacity,
   useColorScheme,
+  RefreshControl,
 } from "react-native";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
@@ -31,6 +32,8 @@ export default function StoreScreen() {
   const [errors, setErrors] = useState<string[]>([]); // Track errors
 
   const [isBulkUpload, setIsBulkUpload] = useState<boolean>(false);
+
+  const [refreshing, setRefreshing] = useState<boolean>(false); // ⬅️ Swipe to Refresh State
 
   const REQUIRED_COLUMNS = ["Title", "Data", "EncryptionKey"];
 
@@ -100,6 +103,7 @@ export default function StoreScreen() {
         }
 
         // Validate Columns
+        // @ts-ignore
         const fileColumns = Object.keys(parsedData[0]);
         const missingColumns = REQUIRED_COLUMNS.filter(
           (col) => !fileColumns.includes(col),
@@ -179,12 +183,24 @@ export default function StoreScreen() {
       setBulkLoading(false);
     }
   }
-
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTitle("");
+    setData("");
+    setEncryptionKey("");
+    setBulkData([]);
+    setErrors([]);
+    setIsBulkUpload(false);
+    setRefreshing(false);
+  }, []);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: "center",
