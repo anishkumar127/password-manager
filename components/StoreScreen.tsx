@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { ScrollView, Text, View, Alert } from "react-native";
+import {
+  ScrollView,
+  Text,
+  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Card from "../components/ui/Card";
@@ -41,50 +48,57 @@ export default function StoreScreen() {
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        flexGrow: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#1e1e1e",
-        padding: 20,
-      }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      // style={{ flex: 1 }}
+      className="bg-gray-900"
     >
-      <Card>
-        <Text className="text-2xl font-bold text-center text-white mb-6">
-          🔒 Secure Password Manager
-        </Text>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+          minHeight: "100%",
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Card className="w-full max-w-md p-2 py-6 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+          {/* Title */}
+          <Text className="text-2xl font-bold text-center text-white mb-6">
+            🔒 Secure Password Manager
+          </Text>
 
-        {/* Title Input */}
-        <Input
-          placeholder="Enter Title"
-          value={title}
-          onChangeText={setTitle}
-        />
+          {/* Inputs */}
+          <Input
+            placeholder="Enter Title"
+            value={title}
+            onChangeText={setTitle}
+          />
 
-        {/* Encryption Key Input */}
-        <Input
-          placeholder="Enter Encryption Key"
-          value={encryptionKey}
-          onChangeText={setEncryptionKey}
-          secureTextEntry={true}
-        />
+          <Input
+            placeholder="Enter Encryption Key"
+            value={encryptionKey}
+            onChangeText={setEncryptionKey}
+            secureTextEntry={true}
+          />
 
-        {/* Resizable Data Input */}
-        <Input
-          placeholder="Enter Data"
-          value={data}
-          onChangeText={setData}
-          multiline={true}
-        />
+          <Input
+            placeholder="Enter Data"
+            value={data}
+            onChangeText={setData}
+            multiline={true}
+          />
 
-        {/* Save Button with Loading */}
-        <Button
-          title={loading ? "Saving..." : "💾 Save Data"}
-          onPress={saveData}
-          loading={loading}
-        />
-      </Card>
-    </ScrollView>
+          {/* Save Button */}
+          <Button
+            title={loading ? "Saving..." : "Save Data"}
+            onPress={saveData}
+            loading={loading}
+            icon="save-outline"
+          />
+        </Card>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

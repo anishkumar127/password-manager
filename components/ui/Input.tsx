@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { TextInput, TextInputProps } from "react-native";
+import {
+  TextInput,
+  TextInputProps,
+  View,
+  TouchableOpacity,
+} from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 
 interface InputProps extends TextInputProps {
   placeholder: string;
@@ -17,23 +23,39 @@ export default function Input({
   multiline,
   ...props
 }: InputProps) {
-  const [height, setHeight] = useState<number>(40); // Initial height
+  const [height, setHeight] = useState<number>(40); // Default height
+  const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false); // Toggle visibility
 
   return (
-    <TextInput
-      className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
-      placeholder={placeholder}
-      placeholderTextColor="#bbb"
-      value={value}
-      onChangeText={onChangeText}
-      secureTextEntry={secureTextEntry}
-      multiline={multiline}
-      onContentSizeChange={(event) => {
-        const newHeight = event.nativeEvent.contentSize.height;
-        setHeight(newHeight < 40 ? 40 : newHeight > 150 ? 150 : newHeight); // Limit height between 40 - 150
-      }}
-      style={{ height, textAlignVertical: "top" }}
-      {...props}
-    />
+    <View className="relative">
+      <TextInput
+        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4 pr-10"
+        placeholder={placeholder}
+        placeholderTextColor="#bbb"
+        value={value}
+        onChangeText={onChangeText}
+        secureTextEntry={secureTextEntry && !isPasswordVisible} // Toggle visibility
+        multiline={multiline}
+        onContentSizeChange={(event) => {
+          const newHeight = event.nativeEvent.contentSize.height;
+          setHeight(newHeight < 40 ? 40 : newHeight > 150 ? 150 : newHeight); // Resize with limit
+        }}
+        style={{ height, textAlignVertical: "top" }}
+        {...props}
+      />
+      {/* Toggle Button for Secure Text */}
+      {secureTextEntry && (
+        <TouchableOpacity
+          className="absolute right-3 top-4"
+          onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+        >
+          <Icon
+            name={isPasswordVisible ? "eye" : "eye-off"}
+            size={20}
+            color="#bbb"
+          />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
