@@ -19,7 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/Feather";
 
 const ListScreen = () => {
-  const colorScheme = useColorScheme(); // 🔥 Detects system theme
+  const colorScheme = useColorScheme();
 
   const [dataList, setDataList] = useState<
     { _id: string; title: string; encryptedData: string }[]
@@ -35,6 +35,10 @@ const ListScreen = () => {
     title: string;
   } | null>(null);
   const [customKey, setCustomKey] = useState("");
+
+  // 📜 Expand Full Text Modal
+  const [expandModalVisible, setExpandModalVisible] = useState(false);
+  const [expandedText, setExpandedText] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -141,6 +145,7 @@ const ListScreen = () => {
         contentContainerStyle={{ paddingBottom: 20 }}
         renderItem={({ item }) => {
           let decryptedText = decryptData(item.encryptedData, decryptionKey);
+          const isDecrypted = decryptedText !== "🔒 Encrypted";
 
           return (
             <View
@@ -154,76 +159,69 @@ const ListScreen = () => {
                   {item.title}
                 </Text>
                 <TouchableOpacity
-                  onPress={() => openDecryptionModal(item._id, item.title)}
+                  onPress={() =>
+                    !isDecrypted && openDecryptionModal(item._id, item.title)
+                  }
                 >
                   <Icon
-                    name="unlock"
+                    name={isDecrypted ? "unlock" : "lock"}
                     size={22}
                     color={colorScheme === "dark" ? "white" : "black"}
                   />
                 </TouchableOpacity>
               </View>
 
-              {/* Encrypted/Decrypted Text */}
+              {/* Truncated Data */}
               <Text
-                className={`${colorScheme === "dark" ? "text-gray-300" : "text-gray-700"} mt-2`}
+                className={`${colorScheme === "dark" ? "text-gray-300" : "text-gray-700"} mt-2 overflow-hidden`}
+                numberOfLines={3}
               >
-                {decryptedText ? decryptedText : "🔒 Encrypted"}
+                {decryptedText}
               </Text>
 
-              {/* Copy Button - Full Width */}
+              {/* Expand Button */}
+              {decryptedText.length > 100 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setExpandedText(decryptedText);
+                    setExpandModalVisible(true);
+                  }}
+                >
+                  <Text className="text-blue-500 mt-2 text-sm">Expand 🔽</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Copy Button */}
               <TouchableOpacity
                 className="bg-green-500 p-3 rounded-lg mt-3 flex-row items-center justify-center w-full"
                 onPress={() => copyToClipboard(decryptedText, item._id)}
                 disabled={copying === item._id}
               >
-                {copying === item._id ? (
-                  <Icon name="loader" size={20} color="white" />
-                ) : (
-                  <Icon name="copy" size={20} color="white" className="mr-2" />
-                )}
-                <Text className="text-white text-center font-semibold ml-2">
-                  {copying === item._id ? "Copying..." : "Copy"}
-                </Text>
+                <Icon name="copy" size={20} color="white" />
               </TouchableOpacity>
             </View>
           );
         }}
       />
 
-      {/* Decryption Modal */}
+      {/* Close Button for Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View className="flex-1 justify-center items-center bg-black/50">
           <View className="bg-white p-6 rounded-lg w-80 shadow-lg">
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              className="absolute right-3 top-3"
+            >
+              <Icon name="x" size={24} color="black" />
+            </TouchableOpacity>
             <Text className="text-lg font-bold mb-4">
               Decrypt "{selectedItem?.title}"
             </Text>
             <TextInput
-              className="border border-gray-300 p-3 rounded-lg w-full mb-4"
+              className="border p-3 rounded-lg w-full mb-4"
               placeholder="Enter Key"
-              value={customKey}
-              onChangeText={setCustomKey}
               secureTextEntry={true}
             />
-            <TouchableOpacity
-              className="bg-blue-600 p-3 rounded-lg"
-              onPress={() => {
-                let decrypted = decryptData(
-                  dataList.find((item) => item._id === selectedItem?.id)
-                    ?.encryptedData || "",
-                  customKey,
-                );
-                Alert.alert(
-                  "Decrypted Data",
-                  decrypted || "🔒 Unable to decrypt",
-                );
-                setModalVisible(false);
-              }}
-            >
-              <Text className="text-white text-center font-semibold">
-                Decrypt
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
