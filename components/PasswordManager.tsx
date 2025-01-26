@@ -80,8 +80,8 @@ export default function PasswordManager() {
 
   return (
     <ScrollView
-    // className="flex-1 bg-gray-900"
-    // contentContainerStyle={{ paddingBottom: 30 }}
+      className="bg-gray-900"
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
     >
       <View className="p-6">
         <Text className="text-2xl font-bold text-center text-white mb-6">
