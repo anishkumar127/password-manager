@@ -1,4 +1,4 @@
-import StoreScreen from "@/components/StoreScreen";
+import StoreScreen from "@/components/screens/StoreScreen";
 import React from "react";
 import { View } from "react-native";
 
