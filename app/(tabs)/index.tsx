@@ -1,19 +1,13 @@
-import { StyleSheet, Text, View } from "react-native";
+import StoreScreen from "@/components/StoreScreen";
 import React from "react";
-import PasswordManager from "@/components/PasswordManager";
-import MainScreen from "@/components/screens/MainScreen";
-import Anish from "@/components/screens/Anish";
+import { View } from "react-native";
 
 const app = () => {
   return (
     <View>
-      <PasswordManager />
-      {/* <MainScreen /> */}
-      {/* <Anish /> */}
+      <StoreScreen />
     </View>
   );
 };
 
 export default app;
-
-const styles = StyleSheet.create({});

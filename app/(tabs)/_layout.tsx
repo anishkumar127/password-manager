@@ -52,7 +52,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="list"
         options={{
           title: "List",
           headerShown: false,
