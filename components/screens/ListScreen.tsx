@@ -1,50 +1,27 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import CryptoJS from "crypto-js";
-import * as Clipboard from "expo-clipboard";
-import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  FlatList,
-  Modal,
-  Platform,
-  RefreshControl,
+  View,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  FlatList,
+  RefreshControl,
   useColorScheme,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
+import * as Clipboard from "expo-clipboard";
+import axios from "axios";
 
 const ListScreen = () => {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === "dark";
 
-  const [dataList, setDataList] = useState<
-    { _id: string; title: string; encryptedData: string }[]
-  >([]);
-  const [decryptionKey, setDecryptionKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
-  const [showKeyModel, setShowKeyModel] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [dataList, setDataList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredData, setFilteredData] = useState(dataList);
-
-  // 🔓 Per-item decryption modal
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<{
-    _id: string;
-    title: string;
-    encryptedData: string;
-  } | null>(null);
-  const [customKey, setCustomKey] = useState("");
-  const [decryptedItemText, setDecryptedItemText] = useState<string>("");
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchData();
-    checkDecryptionKey();
   }, []);
 
   async function fetchData() {
@@ -53,10 +30,9 @@ const ListScreen = () => {
       const response = await axios.get("http://192.168.240.217:5000/data");
       if (response?.data) {
         setDataList(response.data);
-        setFilteredData(response.data);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch data.");
+      alert("Error fetching data.");
     } finally {
       setRefreshing(false);
     }
@@ -64,250 +40,146 @@ const ListScreen = () => {
 
   async function copyToClipboard(text: string) {
     await Clipboard.setStringAsync(text);
-    Alert.alert("✅ Copied", "Text copied to clipboard!");
+    alert("✅ Copied to clipboard!");
   }
-
-  async function saveKeyToLocalStorage(key: string) {
-    try {
-      if (Platform.OS === "web") {
-        await AsyncStorage.setItem("decryption_key", key);
-      } else {
-        await SecureStore.setItemAsync("decryption_key", key);
-      }
-      setDecryptionKey(key);
-    } catch (error) {
-      console.error("Error saving key:", error);
-    }
-  }
-
-  async function checkDecryptionKey() {
-    try {
-      let result;
-      if (Platform.OS === "web") {
-        result = await AsyncStorage.getItem("decryption_key");
-      } else {
-        result = await SecureStore.getItemAsync("decryption_key");
-      }
-      if (result) {
-        setDecryptionKey(result);
-      }
-    } catch (error) {
-      console.error("Error retrieving key:", error);
-    }
-  }
-
-  function openDecryptionModal(item: {
-    _id: string;
-    title: string;
-    encryptedData: string;
-  }) {
-    setSelectedItem(item);
-    setCustomKey("");
-    setDecryptedItemText("");
-    setModalVisible(true);
-  }
-
-  function decryptData(encryptedData: string, key: string) {
-    try {
-      if (!key) return Alert.alert("Error", "🔒 Encrypted (No Key)");
-      const decrypted = CryptoJS.AES.decrypt(encryptedData, key).toString(
-        CryptoJS.enc.Utf8,
-      );
-
-      return decrypted || "🔒 Encrypted";
-    } catch (error) {
-      return "🔒 Encrypted";
-    }
-  }
-
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredData(dataList);
-    } else {
-      setFilteredData(
-        dataList.filter((item) =>
-          item.title.toLowerCase().includes(searchQuery.toLowerCase()),
-        ),
-      );
-    }
-  }, [searchQuery, dataList]);
 
   return (
     <View
-      className={`flex-1 ${isDarkMode ? "bg-gray-900" : "bg-gray-100"} p-4`}
+      style={{
+        flex: 1,
+        backgroundColor: isDarkMode ? "#0D0D0D" : "#F9F9F9",
+        paddingHorizontal: 16,
+        paddingTop: 40,
+      }}
     >
-      <Text
-        className={`text-3xl font-bold text-center ${isDarkMode ? "text-white" : "text-black"} mt-6`}
-      >
-        🔐 Secure Vault
-      </Text>
-
-      {/* Search Input */}
+      {/* Title */}
       <View
-        className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg mt-4`}
+        style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}
       >
-        <TextInput
-          className={`flex-1 ${isDarkMode ? "text-white" : "text-black"}`}
-          placeholder="Search..."
-          placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+        <Icon
+          name="lock"
+          size={28}
+          color={isDarkMode ? "#FFFFFF" : "#000000"}
         />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <Icon
-              name="x-circle"
-              size={20}
-              color={isDarkMode ? "#bbb" : "#777"}
-            />
-          </TouchableOpacity>
-        )}
+        <Text
+          className="w-full"
+          style={{
+            fontSize: 26,
+            fontWeight: "bold",
+            marginLeft: 10,
+            color: isDarkMode ? "#FFFFFF" : "#000000",
+          }}
+        >
+          Secure Vault
+        </Text>
       </View>
 
-      {/* Global Decryption Key Input */}
+      {/* Search Bar */}
       <View
-        className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg my-2`}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#F5F5F5",
+          padding: 12,
+          borderRadius: 12,
+          marginBottom: 15,
+        }}
       >
+        <Icon name="search" size={18} color={isDarkMode ? "#BBBBBB" : "#777"} />
         <TextInput
-          className={`flex-1 ${isDarkMode ? "text-white" : "text-black"}`}
-          placeholder="Enter Global Decryption Key"
-          placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
-          value={decryptionKey}
-          onChangeText={saveKeyToLocalStorage}
-          secureTextEntry={!showKey}
+          placeholder="Search vault..."
+          placeholderTextColor={isDarkMode ? "#BBBBBB" : "#777"}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={{
+            flex: 1,
+            color: isDarkMode ? "#FFFFFF" : "#000",
+            marginLeft: 8,
+            fontSize: 16,
+          }}
         />
-        <TouchableOpacity onPress={() => setShowKey(!showKey)}>
-          <Icon
-            name={showKey ? "eye" : "eye-off"}
-            size={20}
-            color={isDarkMode ? "#bbb" : "#777"}
-          />
-        </TouchableOpacity>
       </View>
 
       {/* List Items */}
       <FlatList
-        data={filteredData}
+        data={dataList.filter((item) =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        )}
         keyExtractor={(item) => item._id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
         }
-        contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => {
-          let decryptedText = decryptData(item.encryptedData, decryptionKey);
-          const isDecrypted = decryptedText !== "🔒 Encrypted";
-
-          return (
-            <View
-              className={`p-4 rounded-lg mb-4 shadow-lg border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"}`}
-            >
-              <View className="flex-row justify-between items-center">
-                <Text
-                  className={`${isDarkMode ? "text-white" : "text-black"} font-bold text-lg`}
-                >
-                  {item.title}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => !isDecrypted && openDecryptionModal(item)}
-                >
-                  <Icon
-                    name={isDecrypted ? "unlock" : "lock"}
-                    size={22}
-                    color={
-                      isDecrypted ? (isDarkMode ? "white" : "black") : "yellow"
-                    }
-                  />
-                </TouchableOpacity>
-              </View>
-
-              <Text
-                className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mt-2 overflow-hidden`}
-                numberOfLines={3}
-              >
-                {decryptedText ?? ""}
-              </Text>
-
-              <TouchableOpacity
-                className="bg-green-500 p-3 rounded-lg mt-3 flex-row items-center justify-center w-full"
-                onPress={() => copyToClipboard(decryptedText ?? "")}
-              >
-                <Icon name="copy" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-          );
-        }}
-      />
-
-      {/* Decryption Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View className="flex-1 justify-center items-center bg-black/50">
+        renderItem={({ item }) => (
           <View
-            className={`p-6 rounded-lg w-80 shadow-lg ${isDarkMode ? "bg-gray-900" : "bg-white"}`}
+            style={{
+              backgroundColor: isDarkMode ? "#1A1A1A" : "#FFFFFF",
+              padding: 16,
+              borderRadius: 16,
+              marginBottom: 10,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              shadowColor: isDarkMode ? "rgba(0,0,0,0.3)" : "#CCC",
+              shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 4, // For Android shadow
+            }}
           >
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              className="absolute right-3 top-3"
-            >
-              <Icon name="x" size={24} color={isDarkMode ? "white" : "black"} />
-            </TouchableOpacity>
-            <Text
-              className={`text-lg font-bold mb-4 ${isDarkMode ? "text-white" : "text-black"}`}
-            >
-              Decrypt "{selectedItem?.title}"
-            </Text>
-            <View
-              className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg mb-4`}
-            >
-              <TextInput
-                className={`flex-1 ${isDarkMode ? "text-white" : "text-black"}`}
-                placeholder="Enter Key"
-                placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
-                onChangeText={setCustomKey}
-                secureTextEntry={!showKeyModel}
-              />
-              <TouchableOpacity onPress={() => setShowKeyModel(!showKeyModel)}>
+            {/* Title & Description */}
+            <View>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: isDarkMode ? "#FFFFFF" : "#000000",
+                }}
+              >
+                {item.title}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: isDarkMode ? "#BBBBBB" : "#666",
+                  marginTop: 2,
+                }}
+              >
+                {item.description || "No description"}
+              </Text>
+            </View>
+
+            {/* Actions */}
+            <View className="flex-row gap-4 justify-center items-center">
+              <TouchableOpacity
+                className="mr-2"
+                onPress={() => copyToClipboard(item.title)}
+              >
                 <Icon
-                  name={showKeyModel ? "eye" : "eye-off"}
+                  name="lock"
                   size={20}
-                  color={isDarkMode ? "#bbb" : "#777"}
+                  color={isDarkMode ? "#BBBBBB" : "#777"}
+                />
+
+                {/* <Icon */}
+                {/*   name="unlock" */}
+                {/*   size={20} */}
+                {/*   color={isDarkMode ? "#BBBBBB" : "#777"} */}
+                {/* /> */}
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="ml-2"
+                onPress={() => copyToClipboard(item.title)}
+              >
+                <Icon
+                  name="copy"
+                  size={20}
+                  color={isDarkMode ? "#BBBBBB" : "#777"}
                 />
               </TouchableOpacity>
             </View>
-            {/* Decrypted Output */}
-            {decryptedItemText ? (
-              <View className="my-2 p-2 rounded-lg">
-                <Text className="text-center text-green-500">
-                  {decryptedItemText}
-                </Text>
-              </View>
-            ) : null}
-            {decryptedItemText && decryptedItemText !== "🔒 Encrypted" ? (
-              <TouchableOpacity
-                className="bg-green-500 p-3 rounded-lg mb-2 flex-row items-center justify-center w-full"
-                onPress={() => copyToClipboard(decryptedItemText ?? "")}
-              >
-                <Icon name="copy" size={20} color="white" />
-              </TouchableOpacity>
-            ) : (
-              ""
-            )}
-            <TouchableOpacity
-              className="bg-blue-600 p-3 rounded-lg"
-              onPress={() => {
-                const decryptedText = decryptData(
-                  selectedItem?.encryptedData || "",
-                  customKey,
-                );
-                setDecryptedItemText(decryptedText ?? "");
-              }}
-            >
-              <Text className="text-white text-center font-semibold">
-                Decrypt
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        )}
+      />
     </View>
   );
 };
