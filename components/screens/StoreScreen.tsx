@@ -212,32 +212,58 @@ export default function StoreScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Card
-          className={`w-full max-w-md p-2 py-6 rounded-lg shadow-lg border ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-700"
-              : "bg-white border-gray-300"
-          }`}
+          className={`w-full max-w-md p-4 rounded-lg shadow-lg border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"}`}
         >
+          {/* App Introduction */}
           <Text
-            className={`text-2xl font-bold text-center ${isDarkMode ? "text-white" : "text-black"} mb-6`}
+            className={`text-2xl font-bold text-center ${isDarkMode ? "text-white" : "text-black"} mb-2`}
           >
             🔒 Secure Password Manager
           </Text>
+          <Text className="text-center text-gray-600 mb-4 px-2">
+            Welcome to Secure Password Manager! This tool allows users to
+            **store passwords securely** with **end-to-end encryption**. The
+            encryption key is **never stored** in our database, ensuring **only
+            you** can access your data.
+          </Text>
+          <Text className="text-center text-gray-500 mb-4">
+            You can **add individual entries** or **upload multiple passwords
+            via an Excel file**.
+          </Text>
 
-          {/* Inputs */}
+          {/* Title Field */}
+          <Text className="text-gray-600 mb-1">Title</Text>
+          <Text className="text-gray-600 text-sm mb-2">
+            📌 The title helps you recognize stored data easily.
+          </Text>
           <Input
-            placeholder="Enter Title"
+            placeholder="Enter a unique title"
             value={title}
             onChangeText={setTitle}
           />
+
+          {/* Encryption Key Field */}
+          <View className="flex-row items-center gap-1">
+            <Text className="text-gray-600 mb-1 mt-3">Encryption Key</Text>
+            <Icon name="lock" size={10} color="gray" />
+          </View>
           <Input
             placeholder="Enter Encryption Key"
             value={encryptionKey}
             onChangeText={setEncryptionKey}
             secureTextEntry={true}
           />
+
+          {/* Encryption Key Warning */}
+          <Text className="text-center text-red-500 font-semibold mt-2">
+            ⚠️ Important: Keep your encryption key safe! Without it, your data
+            cannot be decrypted.
+          </Text>
+
+          {/* Data Input Field */}
+          <Text className="text-gray-600 mb-1 mt-3">Data</Text>
           <Input
-            placeholder="Enter Data"
+            placeholder="Enter data"
             value={data}
             onChangeText={setData}
             multiline={true}
@@ -248,27 +274,28 @@ export default function StoreScreen() {
             title={loading ? "Saving..." : "Save Data"}
             onPress={saveData}
             loading={loading}
-            disable={isBulkUpload ? true : false}
+            disable={isBulkUpload}
             icon="save-outline"
           />
 
-          {/* Bulk Upload */}
+          {/* Upload Excel Button */}
           <TouchableOpacity
             onPress={pickExcelFile}
-            className="bg-blue-600 p-3 rounded-lg flex-row justify-center items-center mt-4"
+            className="border border-blue-600 p-2 rounded-lg flex-row justify-center items-center mt-4"
           >
-            <Icon
-              name="upload"
-              size={20}
-              color={isDarkMode ? "white" : "white"}
-            />
-            <Text
-              className={`${isDarkMode ? "text-white" : "text-white"} ml-2 font-semibold`}
-            >
-              Upload Excel File
+            <Icon name="upload" size={18} color="blue" />
+            <Text className="text-blue-600 ml-2 font-semibold">
+              Upload Excel
             </Text>
           </TouchableOpacity>
 
+          {/* Bulk Upload Guideline */}
+          <Text className="text-gray-500 text-center mt-2">
+            🔄 Bulk upload allows you to store multiple entries at once using an
+            Excel file.
+          </Text>
+
+          {/* Display Errors (if any) */}
           {errors.length > 0 && (
             <View className="mt-4">
               <Text
@@ -284,6 +311,7 @@ export default function StoreScreen() {
             </View>
           )}
 
+          {/* Bulk Upload Info */}
           {bulkData.length > 0 && (
             <View className="mt-4">
               <Text
