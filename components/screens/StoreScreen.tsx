@@ -205,7 +205,7 @@ export default function StoreScreen() {
           flexGrow: 1,
           justifyContent: "center",
           alignItems: "center",
-          padding: 20,
+          padding: 10,
           minHeight: "100%",
           backgroundColor: isDarkMode ? "#1E1E1E" : "#F5F5F5",
         }}
