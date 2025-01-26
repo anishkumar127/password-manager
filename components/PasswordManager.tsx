@@ -13,10 +13,9 @@ import * as SecureStore from "expo-secure-store";
 import CryptoJS from "crypto-js";
 
 import * as Clipboard from "expo-clipboard";
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const PasswordManager = () => {
+export default function PasswordManager() {
   const [dataList, setDataList] = useState([]);
   const [title, setTitle] = useState("");
   const [data, setData] = useState("");
@@ -27,39 +26,30 @@ const PasswordManager = () => {
     checkDecryptionKey();
   }, []);
 
-  // Save decryption key
   async function saveKeyToLocalStorage(key: string) {
     try {
       if (Platform.OS === "web") {
         await AsyncStorage.setItem("decryption_key", key);
       } else {
-        // mobile
         await SecureStore.setItemAsync("decryption_key", key);
       }
+      setDecryptionKey(key);
     } catch (error) {
       console.error("Error saving data:", error);
     }
   }
 
-  // Retrieve decryption key
   async function checkDecryptionKey() {
     try {
+      let result;
       if (Platform.OS === "web") {
-        const result = await AsyncStorage.getItem("decryption_key");
-        if (result) {
-          setDecryptionKey(result);
-          alert("🔐 Here's your value 🔐 \n" + result);
-        } else {
-          alert("No values stored under that key.");
-        }
+        result = await AsyncStorage.getItem("decryption_key");
       } else {
-        const result = await SecureStore.getItemAsync("decryption_key");
-        if (result) {
-          setDecryptionKey(result);
-          alert("🔐 Here's your value 🔐 \n" + result);
-        } else {
-          alert("No values stored under that key.");
-        }
+        result = await SecureStore.getItemAsync("decryption_key");
+      }
+
+      if (result) {
+        setDecryptionKey(result);
       }
     } catch (error) {
       console.error("Error retrieving data:", error);
@@ -78,36 +68,45 @@ const PasswordManager = () => {
     fetchData();
   }
 
-  async function copyToClipboard(text) {
+  async function copyToClipboard(text: string) {
     await Clipboard.setStringAsync(text);
     Alert.alert("Copied", "Text copied to clipboard!");
   }
 
   return (
-    <View className="flex-1 p-4 bg-gray-100">
-      <Text className="text-lg font-bold text-center mb-4">
-        Secure Data Storage
+    <View className="flex-1 p-6 bg-gray-900">
+      <Text className="text-2xl font-bold text-center text-white mb-6">
+        🔒 Secure Password Manager
       </Text>
 
       <TextInput
-        className="border p-2 rounded mb-2"
+        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
         placeholder="Enter Title"
+        placeholderTextColor="#bbb"
         value={title}
         onChangeText={setTitle}
       />
 
       <TextInput
-        className="border p-2 rounded mb-2"
+        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4"
         placeholder="Enter Data"
+        placeholderTextColor="#bbb"
         value={data}
         onChangeText={setData}
       />
 
-      <TouchableOpacity className="bg-blue-500 p-2 rounded" onPress={saveData}>
-        <Text className="text-white text-center">Save Data</Text>
+      <TouchableOpacity
+        className="bg-blue-600 p-3 rounded-lg"
+        onPress={saveData}
+      >
+        <Text className="text-white text-center font-semibold">
+          💾 Save Data
+        </Text>
       </TouchableOpacity>
 
-      <Text className="text-lg font-bold text-center mt-4">Stored Data</Text>
+      <Text className="text-xl font-bold text-center text-white mt-6">
+        📜 Stored Data
+      </Text>
 
       <FlatList
         data={dataList}
@@ -124,15 +123,19 @@ const PasswordManager = () => {
           }
 
           return (
-            <View className="p-2 border mb-2 rounded">
-              <Text className="font-bold">{item.title}</Text>
-              <Text>{displayText ? displayText : "🔒 Encrypted"}</Text>
+            <View className="p-4 bg-gray-800 rounded-lg mb-4">
+              <Text className="text-white font-bold">{item.title}</Text>
+              <Text className="text-gray-300">
+                {displayText ? displayText : "🔒 Encrypted"}
+              </Text>
 
               <TouchableOpacity
-                className="bg-green-500 p-2 rounded mt-2"
+                className="bg-green-500 p-2 rounded-lg mt-3"
                 onPress={() => copyToClipboard(displayText)}
               >
-                <Text className="text-white text-center">Copy</Text>
+                <Text className="text-white text-center font-semibold">
+                  📋 Copy
+                </Text>
               </TouchableOpacity>
             </View>
           );
@@ -140,12 +143,12 @@ const PasswordManager = () => {
       />
 
       <TextInput
-        className="border p-2 rounded mt-4"
+        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mt-6"
         placeholder="Enter Decryption Key"
+        placeholderTextColor="#bbb"
         onChangeText={saveKeyToLocalStorage}
       />
     </View>
   );
-};
-export default PasswordManager;
+}
 
