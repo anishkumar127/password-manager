@@ -5,6 +5,7 @@ interface ButtonProps {
   title: string;
   onPress: () => void;
   loading?: boolean;
+  disable?: boolean;
   icon?: string; // Icon name (optional)
 }
 
@@ -12,15 +13,16 @@ export default function Button({
   title,
   onPress,
   loading = false,
+  disable,
   icon,
 }: ButtonProps) {
   return (
     <TouchableOpacity
       className={`bg-blue-600 p-3 rounded-lg flex-row justify-center items-center ${
-        loading ? "opacity-50" : ""
+        loading || disable ? "opacity-50" : ""
       }`}
       onPress={onPress}
-      disabled={loading}
+      disabled={disable}
     >
       {/* Show Spinner When Loading */}
       {loading ? (

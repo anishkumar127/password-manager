@@ -25,7 +25,14 @@ export default function StoreScreen() {
   const [data, setData] = useState<string>("");
   const [encryptionKey, setEncryptionKey] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+
+  const [bulkLoading, setBulkLoading] = useState<boolean>(false);
   const [bulkData, setBulkData] = useState<any[]>([]);
+  const [errors, setErrors] = useState<string[]>([]); // Track errors
+
+  const [isBulkUpload, setIsBulkUpload] = useState<boolean>(false);
+
+  const REQUIRED_COLUMNS = ["Title", "Data", "EncryptionKey"];
 
   async function saveData() {
     if (!title || !data || !encryptionKey) {
@@ -82,6 +89,7 @@ export default function StoreScreen() {
         const sheet = workbook.Sheets[sheetName];
 
         const parsedData = XLSX.utils.sheet_to_json(sheet);
+        const validationErrors: string[] = [];
 
         if (parsedData.length === 0) {
           Alert.alert(
@@ -91,8 +99,56 @@ export default function StoreScreen() {
           return;
         }
 
-        setBulkData(parsedData);
-        Alert.alert("✅ Success", `Loaded ${parsedData.length} entries.`);
+        // Validate Columns
+        const fileColumns = Object.keys(parsedData[0]);
+        const missingColumns = REQUIRED_COLUMNS.filter(
+          (col) => !fileColumns.includes(col),
+        );
+
+        if (missingColumns.length > 0) {
+          Alert.alert(
+            "❌ Column Mismatch",
+            `Missing required columns: ${missingColumns.join(", ")}`,
+          );
+          return;
+        }
+
+        // Validate Each Row
+        const validData = parsedData
+          .map((row: any, index: number) => {
+            const title = row.Title ? String(row.Title).trim() : "";
+            const data = row.Data ? String(row.Data).trim() : "";
+            const encryptionKey = row.EncryptionKey
+              ? String(row.EncryptionKey).trim()
+              : "";
+
+            if (!title || !data || !encryptionKey) {
+              validationErrors.push(
+                `❌ Row ${index + 1}: Missing required fields`,
+              );
+              return null;
+            }
+
+            return { title, data, encryptionKey };
+          })
+          .filter(Boolean); // Remove invalid rows
+
+        setErrors(validationErrors);
+
+        if (validationErrors.length > 0) {
+          Alert.alert(
+            "⚠️ Warning",
+            `Some rows have errors. Check the list below.`,
+          );
+        } else {
+          Alert.alert(
+            "✅ Success",
+            `Loaded ${validData.length} valid entries.`,
+          );
+        }
+
+        setBulkData(validData);
+        setIsBulkUpload(true);
       };
 
       reader.readAsArrayBuffer(blob);
@@ -104,22 +160,23 @@ export default function StoreScreen() {
 
   async function bulkUpload() {
     if (bulkData.length === 0) {
-      Alert.alert("❌ No Data", "Please upload an Excel file first.");
+      Alert.alert("❌ No Data", "Please upload a valid Excel file first.");
       return;
     }
 
-    setLoading(true);
+    setBulkLoading(true);
     try {
       await axios.post("http://192.168.240.217:5000/bulk-save", {
         records: bulkData,
       });
 
       setBulkData([]);
+      setIsBulkUpload(false);
       Alert.alert("✅ Success", "Bulk data uploaded successfully!");
     } catch (error) {
       Alert.alert("❌ Error", "Failed to upload bulk data.");
     } finally {
-      setLoading(false);
+      setBulkLoading(false);
     }
   }
 
@@ -157,14 +214,12 @@ export default function StoreScreen() {
             value={title}
             onChangeText={setTitle}
           />
-
           <Input
             placeholder="Enter Encryption Key"
             value={encryptionKey}
             onChangeText={setEncryptionKey}
             secureTextEntry={true}
           />
-
           <Input
             placeholder="Enter Data"
             value={data}
@@ -177,38 +232,54 @@ export default function StoreScreen() {
             title={loading ? "Saving..." : "Save Data"}
             onPress={saveData}
             loading={loading}
+            disable={isBulkUpload ? true : false}
             icon="save-outline"
           />
 
           {/* Bulk Upload */}
           <TouchableOpacity
             onPress={pickExcelFile}
-            className="flex-row items-center justify-center mt-4"
+            className="bg-blue-600 p-3 rounded-lg flex-row justify-center items-center mt-4"
           >
             <Icon
               name="upload"
               size={20}
-              color={isDarkMode ? "white" : "black"}
+              color={isDarkMode ? "white" : "white"}
             />
             <Text
-              className={`${isDarkMode ? "text-white" : "text-black"} ml-2`}
+              className={`${isDarkMode ? "text-white" : "text-white"} ml-2 font-semibold`}
             >
               Upload Excel File
             </Text>
           </TouchableOpacity>
 
+          {errors.length > 0 && (
+            <View className="mt-4">
+              <Text
+                className={`${isDarkMode ? "text-red-400" : "text-red-600"} text-center`}
+              >
+                ⚠️ Errors Found:
+              </Text>
+              {errors.slice(0, 5).map((error, index) => (
+                <Text key={index} className="text-red-400 text-sm text-center">
+                  {error}
+                </Text>
+              ))}
+            </View>
+          )}
+
           {bulkData.length > 0 && (
             <View className="mt-4">
               <Text
-                className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} text-center`}
+                className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} text-center mb-2`}
               >
-                Loaded {bulkData.length} entries
+                Loaded {bulkData.length} valid entries
               </Text>
               <Button
                 title="Bulk Upload"
                 onPress={bulkUpload}
-                loading={loading}
-                icon="database"
+                loading={bulkLoading}
+                icon="save-outline"
               />
             </View>
           )}

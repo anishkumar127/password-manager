@@ -4,6 +4,7 @@ import {
   TextInputProps,
   View,
   TouchableOpacity,
+  useColorScheme,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 
@@ -26,10 +27,12 @@ export default function Input({
   const [height, setHeight] = useState<number>(40); // Default height
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false); // Toggle visibility
 
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === "dark";
   return (
     <View className="relative">
       <TextInput
-        className="border border-gray-700 bg-gray-800 p-3 rounded-lg text-white mb-4 pr-10"
+        className={`border ${isDarkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white text-black border-gray-300"}  p-3 rounded-lg text-white mb-4 pr-10`}
         placeholder={placeholder}
         placeholderTextColor="#bbb"
         value={value}
