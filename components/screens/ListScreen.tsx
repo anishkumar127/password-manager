@@ -20,6 +20,7 @@ import Icon from "react-native-vector-icons/Feather";
 
 const ListScreen = () => {
   const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === "dark";
 
   const [dataList, setDataList] = useState<
     { _id: string; title: string; encryptedData: string }[]
@@ -36,8 +37,10 @@ const ListScreen = () => {
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     title: string;
+    encryptedData: string;
   } | null>(null);
   const [customKey, setCustomKey] = useState("");
+  const [decryptedItemText, setDecryptedItemText] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -93,17 +96,23 @@ const ListScreen = () => {
     }
   }
 
-  function openDecryptionModal(itemId: string, title: string) {
-    setSelectedItem({ id: itemId, title });
+  function openDecryptionModal(item: {
+    id: string;
+    title: string;
+    encryptedData: string;
+  }) {
+    setSelectedItem(item);
     setCustomKey("");
+    setDecryptedItemText("");
     setModalVisible(true);
   }
 
   function decryptData(encryptedData: string, key: string) {
     try {
-      return CryptoJS.AES.decrypt(encryptedData, key).toString(
+      const decrypted = CryptoJS.AES.decrypt(encryptedData, key).toString(
         CryptoJS.enc.Utf8,
       );
+      return decrypted || "🔒 Encrypted";
     } catch (error) {
       return "🔒 Encrypted";
     }
@@ -123,46 +132,58 @@ const ListScreen = () => {
 
   return (
     <View
-      className={`flex-1 ${colorScheme === "dark" ? "bg-gray-900" : "bg-gray-100"} p-4`}
+      className={`flex-1 ${isDarkMode ? "bg-gray-900" : "bg-gray-100"} p-4`}
     >
       <Text
-        className={`text-3xl font-bold text-center ${colorScheme === "dark" ? "text-white" : "text-black"} mt-6`}
+        className={`text-3xl font-bold text-center ${isDarkMode ? "text-white" : "text-black"} mt-6`}
       >
         🔐 Secure Vault
       </Text>
 
       {/* Search Input */}
-      <View className="flex-row items-center border border-gray-700 bg-gray-800 p-3 rounded-lg mt-4">
+      <View
+        className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg mt-4`}
+      >
         <TextInput
-          className="flex-1 text-white"
+          className={`flex-1 ${isDarkMode ? "text-white" : "text-black"}`}
           placeholder="Search..."
-          placeholderTextColor="#bbb"
+          placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <Icon name="x-circle" size={20} color="#bbb" />
+            <Icon
+              name="x-circle"
+              size={20}
+              color={isDarkMode ? "#bbb" : "#777"}
+            />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Global Decryption Key Input */}
-      <View className="flex-row items-center border border-gray-700 bg-gray-800 p-3 rounded-lg mt-4">
+      <View
+        className={`flex-row items-center border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"} p-3 rounded-lg mt-4`}
+      >
         <TextInput
-          className="flex-1 text-white"
+          className={`flex-1 ${isDarkMode ? "text-white" : "text-black"}`}
           placeholder="Enter Global Decryption Key"
-          placeholderTextColor="#bbb"
+          placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
           value={decryptionKey}
           onChangeText={saveKeyToLocalStorage}
           secureTextEntry={!showKey}
         />
         <TouchableOpacity onPress={() => setShowKey(!showKey)}>
-          <Icon name={showKey ? "eye" : "eye-off"} size={20} color="#bbb" />
+          <Icon
+            name={showKey ? "eye" : "eye-off"}
+            size={20}
+            color={isDarkMode ? "#bbb" : "#777"}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Data List */}
+      {/* List Items */}
       <FlatList
         data={filteredData}
         keyExtractor={(item) => item._id}
@@ -175,26 +196,30 @@ const ListScreen = () => {
           const isDecrypted = decryptedText !== "🔒 Encrypted";
 
           return (
-            <View className="p-4 rounded-lg mb-4 shadow-lg border border-gray-700 bg-gray-800">
+            <View
+              className={`p-4 rounded-lg mb-4 shadow-lg border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"}`}
+            >
               <View className="flex-row justify-between items-center">
-                <Text className="text-white font-bold text-lg">
+                <Text
+                  className={`${isDarkMode ? "text-white" : "text-black"} font-bold text-lg`}
+                >
                   {item.title}
                 </Text>
                 <TouchableOpacity
-                  onPress={() =>
-                    !isDecrypted && openDecryptionModal(item._id, item.title)
-                  }
+                  onPress={() => !isDecrypted && openDecryptionModal(item)}
                 >
                   <Icon
                     name={isDecrypted ? "unlock" : "lock"}
                     size={22}
-                    color="white"
+                    color={
+                      isDecrypted ? (isDarkMode ? "white" : "black") : "yellow"
+                    }
                   />
                 </TouchableOpacity>
               </View>
 
               <Text
-                className="text-gray-300 mt-2 overflow-hidden"
+                className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mt-2 overflow-hidden`}
                 numberOfLines={3}
               >
                 {decryptedText}
@@ -214,22 +239,35 @@ const ListScreen = () => {
       {/* Decryption Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white p-6 rounded-lg w-80 shadow-lg">
+          <View
+            className={`p-6 rounded-lg w-80 shadow-lg ${isDarkMode ? "bg-gray-900" : "bg-white"}`}
+          >
             <TouchableOpacity
               onPress={() => setModalVisible(false)}
               className="absolute right-3 top-3"
             >
-              <Icon name="x" size={24} color="black" />
+              <Icon name="x" size={24} color={isDarkMode ? "white" : "black"} />
             </TouchableOpacity>
-            <Text className="text-lg font-bold mb-4">
+            <Text
+              className={`text-lg font-bold mb-4 ${isDarkMode ? "text-white" : "text-black"}`}
+            >
               Decrypt "{selectedItem?.title}"
             </Text>
             <TextInput
-              className="border p-3 rounded-lg w-full mb-4"
+              className={`border p-3 rounded-lg w-full mb-4 ${isDarkMode ? "text-white border-gray-700 bg-gray-800" : "text-black border-gray-300 bg-white"}`}
               placeholder="Enter Key"
+              placeholderTextColor={isDarkMode ? "#bbb" : "#555"}
               secureTextEntry={true}
+              onChangeText={setCustomKey}
             />
-            <TouchableOpacity className="bg-blue-600 p-3 rounded-lg">
+            <TouchableOpacity
+              className="bg-blue-600 p-3 rounded-lg"
+              onPress={() =>
+                setDecryptedItemText(
+                  decryptData(selectedItem?.encryptedData || "", customKey),
+                )
+              }
+            >
               <Text className="text-white text-center font-semibold">
                 Decrypt
               </Text>
