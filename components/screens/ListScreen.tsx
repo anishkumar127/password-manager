@@ -1,10 +1,12 @@
 import { PROD_URL } from "@/utils/constants";
+import { toastConfig } from "@/utils/toastConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import * as Clipboard from "expo-clipboard";
+import { useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Animated,
@@ -12,12 +14,15 @@ import {
   Modal,
   Platform,
   RefreshControl,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   View,
   useColorScheme,
 } from "react-native";
+
+import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/Feather";
 const ListScreen = () => {
   const colorScheme = useColorScheme();
@@ -56,7 +61,8 @@ const ListScreen = () => {
     setRefreshing(true);
     try {
       const response = await axios.get(`${PROD_URL}/data`);
-      if (response?.data) {
+      const data = response?.data?.data ?? [];
+      if (data) {
         let result;
         if (Platform.OS === "web") {
           result = await AsyncStorage.getItem("decryption_key");
@@ -79,17 +85,16 @@ const ListScreen = () => {
           }
         }
 
-        for (let i = 0; i < response?.data?.length; i++) {
+        for (let i = 0; i < data?.length; i++) {
           const isDecrypted =
-            Decryption(response.data[i].encryptedData, result ?? "") ===
-            "🔒 Encrypted"
+            Decryption(data[i].encryptedData, result ?? "") === "🔒 Encrypted"
               ? true
               : false;
           const obj = {
-            _id: response?.data[i]?._id,
-            title: response?.data[i]?.title,
+            _id: data[i]?._id,
+            title: data[i]?.title,
             encryptedData: result
-              ? Decryption(response.data[i].encryptedData, result)
+              ? Decryption(data[i].encryptedData, result)
               : "🔒 Encrypted",
             isDecrypted,
           };
@@ -110,7 +115,14 @@ const ListScreen = () => {
   }
 
   const deletePassword = async (id: String) => {
-    Alert.alert("success", "deleted");
+    await axios.delete(`${PROD_URL}/${id}`);
+
+    // Alert.alert("✅ Success!", "🗑️ The item has been successfully deleted.");
+    Toast.show({
+      type: "success",
+      text1: "✅ Success!",
+      text2: "The item has been successfully deleted.",
+    });
     setWhenKeyChange(!whenKeyChange);
   };
 
@@ -202,6 +214,17 @@ const ListScreen = () => {
       }).start();
     }
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBackgroundColor(
+        colorScheme === "dark" ? "#0D0D0D" : "#F9F9F9",
+      );
+      StatusBar.setBarStyle(
+        colorScheme === "light" ? "dark-content" : "light-content",
+      );
+    }, []),
+  );
   return (
     <View
       style={{
@@ -211,6 +234,12 @@ const ListScreen = () => {
         paddingTop: 40,
       }}
     >
+      <StatusBar
+        animated={true}
+        barStyle={colorScheme === "light" ? "dark-content" : "light-content"}
+        showHideTransition={"fade"}
+        backgroundColor={colorScheme === "dark" ? "#0D0D0D" : "#F9F9F9"}
+      />
       {/* Title & Settings */}
       <View
         style={{
@@ -558,6 +587,8 @@ const ListScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <Toast config={toastConfig} />
     </View>
   );
 };

@@ -1,2 +1,4 @@
-npx lint-staged
+chmod +x .husky/pre-commit  # this for linux machine.
+# npm run check-version
+npx lint-staged  # this will run lint when do commit. also this will run script npm run lint:fix npm run format:fix
 git add .

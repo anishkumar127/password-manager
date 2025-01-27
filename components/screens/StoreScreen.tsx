@@ -1,11 +1,12 @@
 import Button from "@/components/ui/Button";
 import axios from "axios";
 import * as DocumentPicker from "expo-document-picker";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   RefreshControl,
   ScrollView,
+  StatusBar,
   Text,
   View,
   useColorScheme,
@@ -15,7 +16,10 @@ import * as XLSX from "xlsx";
 import Card from "../ui/Card";
 import Input from "../ui/Input";
 import { PROD_URL } from "@/utils/constants";
-
+import { useFocusEffect } from "expo-router";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "@/utils/toastConfig";
+import { showToast } from "@/utils/toastService";
 export default function StoreScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === "dark";
@@ -56,9 +60,13 @@ export default function StoreScreen() {
       setData("");
       setEncryptionKey("");
 
-      Alert.alert("✅ Success", "Your data has been securely stored.");
+      showToast(
+        "success",
+        "✅ Success!",
+        "Your data has been securely stored.",
+      );
     } catch (error) {
-      Alert.alert("❌ Error", "Failed to save data. Try again.");
+      showToast("error", "❌ Error!", "Failed to save data. Try again.");
     } finally {
       setLoading(false);
     }
@@ -143,7 +151,8 @@ export default function StoreScreen() {
             `Some rows have errors. Check the list below.`,
           );
         } else {
-          Alert.alert(
+          showToast(
+            "success",
             "✅ Success",
             `Loaded ${validData.length} valid entries.`,
           );
@@ -174,9 +183,9 @@ export default function StoreScreen() {
 
       setBulkData([]);
       setIsBulkUpload(false);
-      Alert.alert("✅ Success", "Bulk data uploaded successfully!");
+      showToast("success", "✅ Success", "Bulk data uploaded successfully!");
     } catch (error) {
-      Alert.alert("❌ Error", "Failed to upload bulk data.");
+      showToast("error", "❌ Error", "Failed to upload bulk data.");
     } finally {
       setBulkLoading(false);
     }
@@ -191,6 +200,22 @@ export default function StoreScreen() {
     setIsBulkUpload(false);
     setRefreshing(false);
   }, []);
+
+  useEffect(() => {
+    setLoading(false);
+    setBulkLoading(false);
+  }, [refreshing]);
+
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBackgroundColor(
+        colorScheme === "dark" ? "#252525" : "#F9F9F9",
+      );
+      StatusBar.setBarStyle(
+        colorScheme === "light" ? "dark-content" : "light-content",
+      );
+    }, []),
+  );
   return (
     <ScrollView
       refreshControl={
@@ -200,16 +225,22 @@ export default function StoreScreen() {
         flexGrow: 1,
         justifyContent: "center",
         alignItems: "center",
-        padding: 10,
-        backgroundColor: isDarkMode ? "#181818" : "#F5F5F5", // 🌙 Dark mode softer background
+        padding: 0,
+        backgroundColor: isDarkMode ? "#0D0D0D" : "#F9F9F9", // 🌙 Dark mode softer background
       }}
     >
+      <StatusBar
+        animated={true}
+        barStyle={colorScheme === "light" ? "dark-content" : "light-content"}
+        showHideTransition={"fade"}
+        backgroundColor={colorScheme === "dark" ? "#252525" : "#F9F9F9"}
+      />
       {/* Secure Password Manager Card */}
       <Card
-        className={`w-full max-w-md p-6 rounded-lg shadow-lg border ${
+        className={`w-full max-w-full p-3 h-full border-0 ${
           isDarkMode
             ? "bg-[#252525] border-[#333333]" // 🌙 Dark mode: softer black, subtle border
-            : "bg-white border-gray-300"
+            : "bg-[#F9F9F9] border-gray-300"
         }`}
       >
         {/* Header */}
@@ -412,6 +443,7 @@ export default function StoreScreen() {
           ))}
         </View>
       </Card>
+      <Toast config={toastConfig} />
     </ScrollView>
   );
 }
