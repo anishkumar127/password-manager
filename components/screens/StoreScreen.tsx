@@ -14,6 +14,7 @@ import Icon from "react-native-vector-icons/Feather";
 import * as XLSX from "xlsx";
 import Card from "../ui/Card";
 import Input from "../ui/Input";
+import { PROD_URL } from "@/utils/constants";
 
 export default function StoreScreen() {
   const colorScheme = useColorScheme();
@@ -45,7 +46,7 @@ export default function StoreScreen() {
 
     setLoading(true);
     try {
-      await axios.post("http://192.168.240.217:5000/save", {
+      await axios.post(`${PROD_URL}/save`, {
         title,
         data,
         encryptionKey,
@@ -167,7 +168,7 @@ export default function StoreScreen() {
 
     setBulkLoading(true);
     try {
-      await axios.post("http://192.168.240.217:5000/bulk-save", {
+      await axios.post(`${PROD_URL}/bulk-save`, {
         records: bulkData,
       });
 

@@ -1,3 +1,4 @@
+import { PROD_URL } from "@/utils/constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import CryptoJS from "crypto-js";
@@ -54,7 +55,7 @@ const ListScreen = () => {
   async function fetchData() {
     setRefreshing(true);
     try {
-      const response = await axios.get("http://192.168.240.217:5000/data");
+      const response = await axios.get(`${PROD_URL}/data`);
       if (response?.data) {
         let result;
         if (Platform.OS === "web") {
