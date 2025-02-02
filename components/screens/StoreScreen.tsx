@@ -20,6 +20,8 @@ import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "@/utils/toastConfig";
 import { showToast } from "@/utils/toastService";
+import CryptoJS from "crypto-js";
+
 export default function StoreScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === "dark";
@@ -50,10 +52,13 @@ export default function StoreScreen() {
 
     setLoading(true);
     try {
-      await axios.post(`${PROD_URL}/save`, {
-        title,
+      const encryptedData = CryptoJS.AES.encrypt(
         data,
         encryptionKey,
+      ).toString();
+      await axios.post(`${PROD_URL}/save`, {
+        title,
+        data: encryptedData,
       });
 
       setTitle("");
@@ -139,7 +144,11 @@ export default function StoreScreen() {
               return null;
             }
 
-            return { title, data, encryptionKey };
+            const encryptedData = CryptoJS.AES.encrypt(
+              data,
+              encryptionKey,
+            ).toString();
+            return { title, data: encryptedData };
           })
           .filter(Boolean); // Remove invalid rows
 
