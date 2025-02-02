@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { ReactNode } from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@/src/utils/cn";
 
 interface CardProps {
   children: ReactNode;

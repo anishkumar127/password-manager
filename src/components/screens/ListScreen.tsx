@@ -1,5 +1,5 @@
-import { PROD_URL } from "@/utils/constants";
-import { toastConfig } from "@/utils/toastConfig";
+import { PROD_URL } from "@/src/utils/constants";
+import { toastConfig } from "@/src/utils/toastConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import CryptoJS from "crypto-js";

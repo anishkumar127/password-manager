@@ -1,4 +1,4 @@
-import StoreScreen from "@/components/screens/StoreScreen";
+import StoreScreen from "@/src/components/screens/StoreScreen";
 import React from "react";
 
 const app = () => {
